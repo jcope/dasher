@@ -15,6 +15,7 @@ extern CONST UINT WM_DASHER_FOCUS;
 
 class CCanvas;
 class CEdit;
+class CPopup;
 class CDasherWindow;
 
 namespace Dasher {
@@ -35,7 +36,7 @@ private:
 class CDasher : public CDashIntfScreenMsgs
 {
 public:
-  CDasher(HWND Parent, CDasherWindow *pWindow, CEdit *pEdit, Dasher::CSettingsStore* settings, CFileUtils* fileUtils);
+  CDasher(HWND Parent, CDasherWindow *pWindow, CEdit *pEdit, CPopup *pPopup, Dasher::CSettingsStore* settings, CFileUtils* fileUtils);
   ~CDasher(void);
 
   // The following functions will not be part of the final interface
@@ -82,6 +83,7 @@ private:
   HWND m_hParent;
   CDasherWindow *m_pWindow;
   CEdit *m_pEdit;
+  CPopup *m_pPopup;
 #ifdef WIN32_SPEECH
   ISpVoice* getVoice(const string& lang);
   CComPtr<ISpVoice> m_pDefaultVoice;

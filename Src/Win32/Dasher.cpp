@@ -10,6 +10,7 @@
 #include "DasherMouseInput.h"
 #include "DasherWindow.h"
 #include "Widgets/Edit.h"
+#include "Widgets/Popup.h"
 
 #include "Sockets/SocketInput.h"
 #include "BTSocketInput.h"
@@ -26,8 +27,8 @@ using namespace WinUTF8;
 
 CONST UINT WM_DASHER_FOCUS = RegisterWindowMessage(L"WM_DASHER_FOCUS");
 
-CDasher::CDasher(HWND Parent, CDasherWindow *pWindow, CEdit *pEdit, Dasher::CSettingsStore* settings, CFileUtils* fileUtils)
-  : CDashIntfScreenMsgs(settings, fileUtils), m_hParent(Parent), m_pWindow(pWindow), m_pEdit(pEdit) {
+CDasher::CDasher(HWND Parent, CDasherWindow *pWindow, CEdit *pEdit,CPopup *pPopup, Dasher::CSettingsStore* settings, CFileUtils* fileUtils)
+  : CDashIntfScreenMsgs(settings, fileUtils), m_hParent(Parent), m_pWindow(pWindow), m_pEdit(pEdit), m_pPopup(pPopup) {
   // This class will be a wrapper for the Dasher 'control' - think ActiveX
 
   // Set up COM for the accessibility stuff
@@ -109,17 +110,20 @@ void Dasher::CDasher::HandleEvent(int iParameter) {
   CDashIntfScreenMsgs::HandleEvent(iParameter);
   m_pWindow->HandleParameterChange(iParameter);
   m_pEdit->HandleParameterChange(iParameter);
+  m_pPopup->HandleParameterChange(iParameter);
   if (iParameter == SP_DASHER_FONT)
     m_pCanvas->SetFont(GetStringParameter(SP_DASHER_FONT));
 }
 
 void Dasher::CDasher::editOutput(const string &strText, CDasherNode *pSource) {
   m_pEdit->output(strText);
+  m_pPopup->output(strText);
   CDasherInterfaceBase::editOutput(strText, pSource);
 }
 
 void Dasher::CDasher::editDelete(const string &strText, CDasherNode *pSource) {
   m_pEdit->deletetext(strText);
+  m_pPopup->deletetext(strText);
   CDasherInterfaceBase::editDelete(strText, pSource);
 }
 

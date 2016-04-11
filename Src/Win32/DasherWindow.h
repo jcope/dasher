@@ -14,6 +14,7 @@
 #include "Widgets/Splitter.h"
 #include "Widgets/StatusControl.h"
 #include "Widgets/Edit.h"
+#include "Widgets/Popup.h"
 
 class CToolbar;
 namespace Dasher {
@@ -80,6 +81,7 @@ private:
 	// Widgets:
 	CToolbar *m_pToolbar;
 	CEdit *m_pEdit;
+	CPopup *m_pPopup;
 	//CCanvas *m_pCanvas;
 	CSplitter *m_pSplitter;
 	CStatusControl *m_pSpeedAlphabetBar;

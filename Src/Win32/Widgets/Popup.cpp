@@ -18,7 +18,7 @@
 // along with Dasher; if not, write to the Free Software 
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-// NOTES:
+// NOTES: Created by Jeremy Cope to facilitate extended (multiple) displays.
 //
 
 #include "WinCommon.h"
@@ -35,7 +35,6 @@ using namespace WinLocalisation;
 using namespace WinUTF8;
 
 CPopup::CPopup(CAppSettings *pAppSettings) {
-  m_FilenameGUI = 0;
   
   // TODO: Check that this is all working okay (it quite probably
   // isn't). In the long term need specialised editor classes.
@@ -48,228 +47,20 @@ CPopup::CPopup(CAppSettings *pAppSettings) {
 }
 
 HWND CPopup::Create(HWND hParent, bool bNewWithDate) {
-  RECT r = {
-	  100,100,400,500
-  };
-  m_popup = CWindowImpl<CPopup>::Create(hParent, r, NULL, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+	RECT r = getInitialWindow();
+  //m_popup = CWindowImpl<CPopup>::Create(hParent, r, NULL, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+  m_popup = CWindowImpl<CPopup>::Create(hParent, r, NULL, WS_OVERLAPPEDWINDOW);
 
-  Tstring WindowTitle;
-  WinLocalisation::GetResourceString(IDS_APP_TITLE, &WindowTitle);
-  m_FilenameGUI = new CFilenameGUI(hParent, WindowTitle.c_str(), bNewWithDate);
-  
   return *this;
 }
 
 
 CPopup::~CPopup() {
   DeleteObject(m_Font);
-  delete m_FilenameGUI;
 }
 
 void CPopup::Move(int x, int y, int Width, int Height) {
   MoveWindow( x, y, Width, Height, TRUE);
-}
-
-bool CPopup::Save() {
-  if (m_filename == TEXT(""))
-    return false;
-
-  HANDLE FileHandle = CreateFile(m_filename.c_str(), GENERIC_WRITE, 0, 
-    (LPSECURITY_ATTRIBUTES)NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
-  if (FileHandle == INVALID_HANDLE_VALUE)
-    return false;
-
-  CString wideText;
-  GetWindowText(wideText);
-
-  DWORD NumberOfBytesWritten;   // Used by WriteFile
-  switch (m_pAppSettings->GetLongParameter(APP_LP_FILE_ENCODING))
-  {
-  case Opts::UTF8: {
-    WriteFile(FileHandle, "\xEF\xBB\xBF", 3, &NumberOfBytesWritten, NULL);
-    string utf8Text = wstring_to_UTF8string(wideText);
-    WriteFile(FileHandle, utf8Text.c_str(), utf8Text.size(), &NumberOfBytesWritten, NULL);
-    break;
-  }
-  case Opts::UTF16LE: {
-    // TODO I am assuming this machine is LE. Do any windows (perhaps CE) machines run on BE?
-    WriteFile(FileHandle, "\xFF\xFE", 2, &NumberOfBytesWritten, NULL);
-    WriteFile(FileHandle, wideText.GetBuffer(), wideText.GetLength() * 2, &NumberOfBytesWritten, NULL);
-    break;
-  }
-  case Opts::UTF16BE: {
-    // TODO I am again assuming this machine is LE.
-    WriteFile(FileHandle, "\xFE\xFF", 2, &NumberOfBytesWritten, NULL);
-    for (unsigned int i = 0; i < wideText.GetLength(); i++) {
-      wideText.SetAt(i, _byteswap_ushort(wideText[i]));
-    }
-    WriteFile(FileHandle, wideText.GetBuffer(), wideText.GetLength() * 2, &NumberOfBytesWritten, NULL);
-    break;
-  }
-  default:
-    CStringA mbcsText(wideText); // converts wide string to current locale
-    WriteFile(FileHandle, mbcsText, mbcsText.GetLength(), &NumberOfBytesWritten, NULL);
-    break;
-  }
-  CloseHandle(FileHandle);
-
-  m_FilenameGUI->SetDirty(false);
-  m_dirty = false;
-  return true;
-}
-
-bool CPopup::ConfirmAndSaveIfNeeded() {
-  if (!m_pAppSettings->GetBoolParameter(APP_BP_CONFIRM_UNSAVED))
-    return true;
-  
-  switch (m_FilenameGUI->QuerySaveFirst()) {
-  case IDYES:
-    if (!Save())
-      if (!TSaveAs(m_FilenameGUI->SaveAs()))
-        return false;
-    break;
-  case IDNO:
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
-void CPopup::New() {
-  if (ConfirmAndSaveIfNeeded())
-    TNew(TEXT(""));
-}
-
-void CPopup::Open() {
-  if (ConfirmAndSaveIfNeeded())
-    TOpen(m_FilenameGUI->Open());
-}
-
-void CPopup::SaveAs() {
-  TSaveAs(m_FilenameGUI->SaveAs());
-}
-
-std::string CPopup::Import() {
-  string filename;
-  wstring_to_UTF8string(m_FilenameGUI->Open(), filename);
-  return filename;
-}
-
-void CPopup::SetDirty() {
-  m_dirty = true;
-  m_FilenameGUI->SetDirty(true);
-}
-
-void CPopup::TNew(const Tstring &filename) {
-  // TODO: Send a message to the parent to say that the buffer has
-  // changed (as in the Linux version).
-
-  if(filename == TEXT(""))
-    m_filename = m_FilenameGUI->New();
-  else
-    m_filename = filename;
-  Clear();
-}
-
-bool CPopup::TOpen(const Tstring &filename) {
-  // Could try and detect unicode formats from BOMs like notepad.
-  // Could also base codepage on menu.
-  // Best thing is probably to trust any BOMs at the beginning of file, but otherwise
-  // to believe menu. Unicode files don't necessarily have BOMs, especially from Unix.
-
-  HANDLE FileHandle = CreateFile(filename.c_str(), GENERIC_READ,
-                                FILE_SHARE_READ, (LPSECURITY_ATTRIBUTES) NULL,
-                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                                (HANDLE) NULL);
-
-  if(FileHandle == INVALID_HANDLE_VALUE)
-    return false;
-
-  m_filename = filename;
-  SetFilePointer(FileHandle, NULL, NULL, FILE_BEGIN);
-  DWORD filesize = GetFileSize(FileHandle, NULL);
-  unsigned long amountread = 0;
-  CStringA filestr;
-  char* filebuffer = filestr.GetBufferSetLength(filesize+2);
-  ReadFile(FileHandle, filebuffer, filesize, &amountread, NULL);
-  CloseHandle(FileHandle);
-  filebuffer[amountread] = 0;
-  filebuffer[amountread+1] = 0;
-  long encoding = m_pAppSettings->GetLongParameter(APP_LP_FILE_ENCODING);
-  bool removeBOM = false;
-  if (amountread >= 3 && strncmp(filebuffer, "\xEF\xBB\xBF", 3) == 0) {
-    encoding = Opts::UTF8;
-    removeBOM = true;
-  }
-  if (amountread >= 2 && strncmp(filebuffer, "\xFF\xFE", 2) == 0) {
-    encoding = Opts::UTF16LE;
-    removeBOM = true;
-  }
-  if (amountread >= 2 && strncmp(filebuffer, "\xFE\xFF", 2) == 0) {
-    encoding = Opts::UTF16BE;
-    removeBOM = true;
-  }
-
-  wstring inserttext;
-  switch (encoding) {
-  case Opts::UTF8: {
-    UTF8string_to_wstring(filebuffer + (removeBOM ? 3 : 0), inserttext);
-    break;
-  }
-  case Opts::UTF16LE: {
-    inserttext = reinterpret_cast<wchar_t*>(filebuffer+ (removeBOM ? 2 : 0));
-    break;
-  }
-  case Opts::UTF16BE: {
-    wchar_t* widePtr = reinterpret_cast<wchar_t*>(filebuffer + (removeBOM ? 2 : 0));
-    for (unsigned int i = 0; widePtr[i]; i++) {
-      widePtr[i] = _byteswap_ushort(widePtr[i]);
-    }
-    inserttext = widePtr;
-    break;
-  }
-  default:
-    CString wideFromMBCS(filestr); // converts mbcs to wide string
-    inserttext = wideFromMBCS;
-    break;
-  }
-  InsertText(inserttext);
-
-  m_FilenameGUI->SetFilename(m_filename);
-  m_FilenameGUI->SetDirty(false);
-  m_dirty = false;
-  return true;
-}
-
-bool CPopup::TSaveAs(const Tstring &filename) {
-  m_filename = filename;
-  if(Save()) {
-    m_FilenameGUI->SetFilename(m_filename);
-    return true;
-  }
-  else
-    return false;
-}
-
-void CPopup::Cut() {
-  SendMessage(WM_CUT, 0, 0);
-}
-
-void CPopup::Copy() {
-  SendMessage(WM_COPY, 0, 0);
-}
-
-void CPopup::Paste() {
-  SendMessage(WM_PASTE, 0, 0);
-}
-
-void CPopup::SelectAll() {
-  SendMessage(EM_SETSEL, 0, -1);
-}
-
-void CPopup::Clear() {
-  SendMessage(WM_SETTEXT, 0, (LPARAM) TEXT(""));
 }
 
 void CPopup::SetFont(string Name, long Size) {
@@ -510,7 +301,7 @@ void CPopup::deletetext(const std::string &sText) {
   // newline pair, but we're now assuming we'll never have two real characters for
   // a single symbol
 
-if(m_pAppSettings->GetLongParameter(APP_LP_STYLE) == APP_STYLE_DIRECT) {
+  if(m_pAppSettings->GetLongParameter(APP_LP_STYLE) == APP_STYLE_DIRECT) {
 
     fakekey[0].type = fakekey[1].type = INPUT_KEYBOARD;
     fakekey[0].ki.wVk = fakekey[1].ki.wVk = VK_BACK;
@@ -527,17 +318,45 @@ if(m_pAppSettings->GetLongParameter(APP_LP_STYLE) == APP_STYLE_DIRECT) {
   }
 }
 
-void CPopup::SetNewWithDate(bool bNewWithDate) {
-  if(m_FilenameGUI)
-    m_FilenameGUI->SetNewWithDate(bNewWithDate);
+void CPopup::setupOnExtendedDisplay(){
+	//MyInfoEnumProc
+	//EnumDisplayMonitors(NULL, NULL, MyInfoEnumProc, 0);
+}
+RECT CPopup::getInitialWindow() {
+	RECT rect;
+	rect = {
+		//-1200,100,-200,600
+		0,100,1000,600
+	};
+	return rect;
 }
 
 void CPopup::HandleParameterChange(int iParameter) {
   switch(iParameter) {
-  case APP_SP_EDIT_FONT:
-  case APP_LP_EDIT_FONT_SIZE:
-    SetFont(m_pAppSettings->GetStringParameter(APP_SP_EDIT_FONT), m_pAppSettings->GetLongParameter(APP_LP_EDIT_FONT_SIZE));
+  case APP_SP_POPUP_FONT:
+  case APP_LP_POPUP_FONT_SIZE:
+    SetFont(m_pAppSettings->GetStringParameter(APP_SP_POPUP_FONT), m_pAppSettings->GetLongParameter(APP_LP_POPUP_FONT_SIZE));
     break;
+  case APP_BP_POPUP_ENABLE:
+	//Not sure why if get bool returns true, we want to hide...
+	if(m_pAppSettings->GetBoolParameter(APP_BP_POPUP_ENABLE) == true){
+		setupOnExtendedDisplay();
+	  ShowWindow(SW_SHOW);
+	}
+	else {
+	  ShowWindow(SW_HIDE);
+	}		
+    break;
+  case APP_BP_POPUP_FULL_SCREEN:
+	if (m_pAppSettings->GetBoolParameter(APP_BP_POPUP_FULL_SCREEN) == true) {
+	  ShowWindow(SW_MAXIMIZE);
+	}
+    else {
+	  ShowWindow(SW_SHOWDEFAULT);
+	}
+    break;
+  case APP_BP_POPUP_INFRONT:
+	break;
   default:
     break;
   }

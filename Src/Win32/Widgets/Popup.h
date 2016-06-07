@@ -60,7 +60,6 @@ class CPopup : public ATL::CWindowImpl<CPopup> {
   BEGIN_MSG_MAP( CPopup )
 
   END_MSG_MAP()
-    
 
   void Move(int x, int y, int Width, int Height);
 
@@ -70,21 +69,6 @@ class CPopup : public ATL::CWindowImpl<CPopup> {
   std::string GetTextAroundCursor(Dasher::CControlManager::EditDistance iDist);
 
   void SetKeyboardTarget(HWND hwnd);
-  bool ConfirmAndSaveIfNeeded();
-  bool Save();
-
-  // Functions for Windows GUI to call
-  void New();
-  void Open();
-  void SaveAs();
-  std::string Import();
-  void SetDirty();              // Parent window gets notification Edit window has changed.
-  
-  void Cut();
-  void Copy();
-  void Paste();
-  void SelectAll();
-  void Clear();
   
   void SetFont(std::string Name, long Size);
   
@@ -95,8 +79,6 @@ class CPopup : public ATL::CWindowImpl<CPopup> {
     
   // remove the previous character: called when we steer/reverse the crosshair out of a node
   void deletetext(const std::string & sText);
-  
-  void SetNewWithDate(bool bNewWithDate);
 
   //ACL Making these public so can be called directly from CDasher
   void HandleParameterChange(int iParameter);
@@ -113,11 +95,6 @@ class CPopup : public ATL::CWindowImpl<CPopup> {
   HWND m_hTarget;
   bool m_bForwardKeyboard;
   
-  CFilenameGUI *m_FilenameGUI;
-  Tstring m_filename;
-  void TNew(const Tstring & filename);
-  bool TOpen(const Tstring & filename);
-  bool TSaveAs(const Tstring & filename);
   void GetRange(bool bForwards, Dasher::CControlManager::EditDistance iDist, int* iStart, int* iEnd);
   
   HFONT m_Font;
@@ -130,6 +107,8 @@ class CPopup : public ATL::CWindowImpl<CPopup> {
   void InsertText(Tstring InsertText);  // add symbol to edit control
   
   CAppSettings *m_pAppSettings;
+  void setupOnExtendedDisplay();
+  RECT getInitialWindow();
 };
 
 #endif /* #ifndef __CPopup_h__ */

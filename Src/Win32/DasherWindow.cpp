@@ -113,7 +113,7 @@ HWND CDasherWindow::Create() {
   // Create Pop-Out Window
   m_pPopup = new CPopup(m_pAppSettings);
   m_pPopup->Create(hWnd, m_pAppSettings->GetBoolParameter(APP_BP_TIME_STAMP));
-  m_pPopup->SetFont(m_pAppSettings->GetStringParameter(APP_SP_EDIT_FONT), m_pAppSettings->GetLongParameter(APP_LP_EDIT_FONT_SIZE));
+  m_pPopup->SetFont(m_pAppSettings->GetStringParameter(APP_SP_POPUP_FONT), m_pAppSettings->GetLongParameter(APP_LP_POPUP_FONT_SIZE));
 
   m_pDasher = new CDasher(hWnd, this, m_pEdit, m_pPopup, settings, &fileUtils);
 
@@ -217,10 +217,6 @@ LRESULT CDasherWindow::OnCommand(UINT message, WPARAM wParam, LPARAM lParam, BOO
   if (((HWND)lParam == *m_pEdit) && (HIWORD(wParam) == EN_CHANGE)) {
     m_pEdit->SetDirty();
     return 0;
-  }
-  if (((HWND)lParam == *m_pPopup) && (HIWORD(wParam) == EN_CHANGE)) {
-	  m_pPopup->SetDirty();
-	  return 0;
   }
 
   // Parse the menu selections:
@@ -427,7 +423,7 @@ void CDasherWindow::Layout() {
   case APP_STYLE_DIRECT:
     m_pDasher->Move(0, ToolbarHeight, Width, CanvasHeight);
     m_pEdit->ShowWindow(SW_HIDE);
-	m_pPopup->ShowWindow(SW_HIDE);
+	//m_pPopup->ShowWindow(SW_HIDE);
     m_pSplitter->ShowWindow(SW_HIDE);
     break;
 
@@ -442,7 +438,7 @@ void CDasherWindow::Layout() {
       m_pEdit->Move(Width / 2, ToolbarHeight, Width - Width / 2, CanvasHeight);
     }
     m_pEdit->ShowWindow(SW_SHOW);
-	m_pPopup->ShowWindow(SW_SHOW);
+	//m_pPopup->ShowWindow(SW_SHOW);
     m_pSplitter->ShowWindow(SW_HIDE);
     break;
 

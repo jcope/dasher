@@ -8,7 +8,7 @@
 
 #include "WinCommon.h"
 
-#include "ViewPage.h"
+#include "PopupPage.h"
 #include "../resource.h"
 
 #include <utility>              // for std::pair
@@ -26,7 +26,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 #endif
 
-CViewPage::CViewPage(HWND Parent, CAppSettings *pAppSettings)
+CPopupPage::CPopupPage(HWND Parent, CAppSettings *pAppSettings)
 :CPrefsPageBase(Parent, pAppSettings) {
 
   m_CurrentColours = pAppSettings->GetStringParameter(SP_COLOUR_ID);
@@ -43,10 +43,11 @@ static menuentry menutable[] = {
   {BP_DRAW_MOUSE_LINE, IDC_DRAWMOUSELINE},
 };
 
-void CViewPage::PopulateList() {
+void CPopupPage::PopulateList() {
   // Populate the controls in the dialogue box based on the relevent parameters
   // in m_pDasher
-
+  
+  
   // TODO: Annoying inversion makes this hard
   if(m_pAppSettings->GetBoolParameter(BP_PALETTE_CHANGE)) {
     SendMessage(GetDlgItem(m_hwnd, IDC_COLOURSCHEME), BM_SETCHECK, BST_UNCHECKED, 0);
@@ -111,7 +112,9 @@ void CViewPage::PopulateList() {
 }
 
 
-bool CViewPage::Apply() {
+bool CPopupPage::Apply() {
+	OutputDebugStringW(L"Popup Prefs:: Apply\n");
+/*
   for(int ii = 0; ii<sizeof(menutable)/sizeof(menuentry); ii++)
   {
     m_pAppSettings->SetBoolParameter(menutable[ii].paramNum, 
@@ -134,7 +137,7 @@ bool CViewPage::Apply() {
   m_pAppSettings->SetBoolParameter(BP_PALETTE_CHANGE, 
     SendMessage(GetDlgItem(m_hwnd, IDC_COLOURSCHEME), BM_GETCHECK, 0, 0) == BST_UNCHECKED );
 
-
+*/
   if(SendMessage(GetDlgItem(m_hwnd, IDC_FONT_SMALL), BM_GETCHECK, 0, 0) == BST_CHECKED)
     m_pAppSettings->SetLongParameter(LP_DASHER_FONTSIZE, Dasher::Opts::Normal);
   else if(SendMessage(GetDlgItem(m_hwnd, IDC_FONT_LARGE), BM_GETCHECK, 0, 0) == BST_CHECKED)
@@ -147,56 +150,70 @@ bool CViewPage::Apply() {
   return TRUE;
 }
 
-LRESULT CViewPage::WndProc(HWND Window, UINT message, WPARAM wParam, LPARAM lParam) {
-  OutputDebugStringW(L"ViewPage Prefs:: WndProc\n");
+LRESULT CPopupPage::WndProc(HWND Window, UINT message, WPARAM wParam, LPARAM lParam) {
+	OutputDebugStringW(L"Popup Prefs:: WndProc: ");
   // most things we pass on to CPrefsPageBase, but we need to handle slider motion
-  switch (message) {
+	switch (message) {
 
-  case WM_COMMAND:
-    if(HIWORD(wParam)==BN_CLICKED || HIWORD(wParam)==LBN_SELCHANGE) {
-      if(LOWORD(wParam) != 0 && m_hPropertySheet != 0 && m_hwnd != 0) {
-        PropSheet_Changed(m_hPropertySheet, m_hwnd); // enables the 'Apply' button
-        // Behaviour isn't *perfect* since it activates the Apply button even if you, say,
-        // click 'new' alphabet then click Cancel when asked for a name.
-      }
-    }
-    switch (LOWORD(wParam)) {
-    case (IDC_COLOURS):
-      if(HIWORD(wParam) == LBN_SELCHANGE) {
-        HWND ListBox = GetDlgItem(m_hwnd, IDC_COLOURS);
-        LRESULT CurrentItem = SendMessage(ListBox, LB_GETCURSEL, 0, 0);
-        LRESULT CurrentIndex = SendMessage(ListBox, LB_GETITEMDATA, CurrentItem, 0);
-        m_CurrentColours = ColourList[CurrentIndex];
-      }
-      return TRUE;
- 
-  case IDC_DFONT_BUTTON:
-    // TODO: Put this in a function
-     {
-      CHOOSEFONT Data;
-      LOGFONT lf;
-      HFONT Font = (HFONT) GetStockObject(DEFAULT_GUI_FONT);
-      GetObject(Font, sizeof(LOGFONT), &lf);
-      Tstring tstrFaceName;
-      WinUTF8::UTF8string_to_wstring(m_pAppSettings->GetStringParameter(SP_DASHER_FONT), tstrFaceName);
-      _tcscpy(lf.lfFaceName, tstrFaceName.c_str());
-      Data.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
-      Data.lStructSize = sizeof(CHOOSEFONT);
-      // TODO: Give this an owner
-      Data.hwndOwner = NULL;
-      Data.lpLogFont = &lf;
-      if(ChooseFont(&Data)) {
-	      string FontName;
-	      WinUTF8::wstring_to_UTF8string(lf.lfFaceName, FontName);
-	      m_pAppSettings->SetStringParameter(SP_DASHER_FONT, FontName);
-      }
-    }
-    break;
-  case IDC_COLOURSCHEME:
-    EnableWindow(GetDlgItem(m_hwnd, IDC_COLOURS), SendMessage(GetDlgItem(m_hwnd, IDC_COLOURSCHEME), BM_GETCHECK, 0, 0) == BST_CHECKED);
-    break;
-    }
+	case WM_COMMAND:
+		if (HIWORD(wParam) == BN_CLICKED || HIWORD(wParam) == LBN_SELCHANGE) {
+			if (LOWORD(wParam) != 0 && m_hPropertySheet != 0 && m_hwnd != 0) {
+				PropSheet_Changed(m_hPropertySheet, m_hwnd); // enables the 'Apply' button
+				// Behaviour isn't *perfect* since it activates the Apply button even if you, say,
+				// click 'new' alphabet then click Cancel when asked for a name.
+			}
+		}
+		switch (LOWORD(wParam)) {
+		case (IDC_COLOURS):
+			OutputDebugStringW(L"Colours\n");
+			if (HIWORD(wParam) == LBN_SELCHANGE) {
+				HWND ListBox = GetDlgItem(m_hwnd, IDC_COLOURS);
+				LRESULT CurrentItem = SendMessage(ListBox, LB_GETCURSEL, 0, 0);
+				LRESULT CurrentIndex = SendMessage(ListBox, LB_GETITEMDATA, CurrentItem, 0);
+				m_CurrentColours = ColourList[CurrentIndex];
+			}
+			return TRUE;
+			break;
+		case IDC_DFONT_BUTTON:  // TODO: Put this in a function
+			OutputDebugStringW(L"Font\n");
+			{
+			CHOOSEFONT Data;
+			LOGFONT lf;
+			HFONT Font = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+			GetObject(Font, sizeof(LOGFONT), &lf);
+			Tstring tstrFaceName;
+			WinUTF8::UTF8string_to_wstring(m_pAppSettings->GetStringParameter(SP_DASHER_FONT), tstrFaceName);
+			_tcscpy(lf.lfFaceName, tstrFaceName.c_str());
+			Data.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
+			Data.lStructSize = sizeof(CHOOSEFONT);
+			// TODO: Give this an owner
+			Data.hwndOwner = NULL;
+			Data.lpLogFont = &lf;
+			if (ChooseFont(&Data)) {
+				string FontName;
+				WinUTF8::wstring_to_UTF8string(lf.lfFaceName, FontName);
+				//m_pAppSettings->SetStringParameter(SP_DASHER_FONT, FontName);
+				m_pAppSettings->SetLongParameter(APP_LP_POPUP_FONT_SIZE, lf.lfHeight);
+			}
+			}
+			break;
+		case IDC_COLOURSCHEME:
+			EnableWindow(GetDlgItem(m_hwnd, IDC_COLOURS), SendMessage(GetDlgItem(m_hwnd, IDC_COLOURSCHEME), BM_GETCHECK, 0, 0) == BST_CHECKED);
+			break;
+		case IDC_POPUP_ENABLE:
+			m_pAppSettings->SetBoolParameter(APP_BP_POPUP_ENABLE, !(m_pAppSettings->GetBoolParameter(APP_BP_POPUP_ENABLE)));
+			break;
+		case IDC_POPUP_FULLSCREEN:
+			m_pAppSettings->SetBoolParameter(APP_BP_POPUP_FULL_SCREEN, !(m_pAppSettings->GetBoolParameter(APP_BP_POPUP_FULL_SCREEN)));
+			break;
+		case IDC_POPUP_ALWAYSTOP:
+			OutputDebugStringW(L"Always On Top\n");
+			break;
+		default:
+			OutputDebugStringW(L"None\n");
+			break;
+
+	}
   }
-
   return CPrefsPageBase::WndProc(Window, message, wParam, lParam);
 }

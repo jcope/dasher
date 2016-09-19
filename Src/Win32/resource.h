@@ -37,6 +37,7 @@
 #define IDD_APPPAGE                     179
 #define IDD_MODULESETTINGS              180
 #define IDS_PREFS_POPUP					181
+#define IDD_STATUSBAR                   182
 #define IDC_INPUT_LIST                  1008
 #define IDC_CONTROL_LIST                1009
 #define IDC_ALPHABETS                   1010
@@ -94,7 +95,9 @@
 #define IDC_POPUP_ENABLE				1162
 #define IDC_POPUP_FULLSCREEN			1163
 #define IDC_POPUP_ALWAYSTOP				1164
-
+#define IDC_SPEED_EDIT                  1165
+#define IDC_SPEED_SPIN                  1166
+#define IDC_ALPHABET_COMBO              1167
 #define ID_EDIT_SELECTALL               32775
 #define ID_HELP_CONTENTS                32776
 #define ID_EDIT_COPY_ALL                32798
@@ -112,9 +115,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        182
+#define _APS_NEXT_RESOURCE_VALUE        184
 #define _APS_NEXT_COMMAND_VALUE         32820
-#define _APS_NEXT_CONTROL_VALUE         1162
+#define _APS_NEXT_CONTROL_VALUE         1167
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

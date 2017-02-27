@@ -203,6 +203,12 @@ void CPopup::getDasherWidnowInfo() {
 	popupRect.left = dasherWindwowRect.right + 20;
 	popupRect.bottom = (dasherWindwowRect.bottom - dasherWindwowRect.top) / 2;
 	popupRect.right = (dasherWindwowRect.right - dasherWindwowRect.left) + popupRect.left;
+
+	//Setting default position to same as dasher window.
+	popupRect.top = iTop;
+	popupRect.left = iLeft;
+	popupRect.right = iRight;
+	popupRect.bottom = iBottom;
 }
 BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
 	RECT monitorCoordinates = *lprcMonitor;
